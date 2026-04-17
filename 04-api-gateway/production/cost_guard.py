@@ -126,3 +126,41 @@ class CostGuard:
 
 # Singleton
 cost_guard = CostGuard(daily_budget_usd=1.0, global_daily_budget_usd=10.0)
+
+
+# ──────────────────────────────────────────────────────────
+# Production Pattern: Redis-based check_budget
+# Thay thế in-memory CostGuard khi cần scale nhiều instances.
+# Yêu cầu: Redis đang chạy (redis-server hoặc Docker).
+# ──────────────────────────────────────────────────────────
+try:
+    import redis as _redis
+    from datetime import datetime as _datetime
+
+    _r = _redis.Redis(decode_responses=True)
+
+    def check_budget(user_id: str, estimated_cost: float) -> bool:
+        """
+        Kiểm tra budget theo tháng dùng Redis.
+
+        - Budget: $10/tháng/user
+        - Key format: budget:<user_id>:<YYYY-MM>
+        - Tự động expire sau 32 ngày (reset đầu tháng sau)
+
+        Return True nếu còn budget, False nếu vượt.
+        """
+        month_key = _datetime.now().strftime("%Y-%m")
+        key = f"budget:{user_id}:{month_key}"
+
+        current = float(_r.get(key) or 0)
+        if current + estimated_cost > 10:
+            return False
+
+        _r.incrbyfloat(key, estimated_cost)
+        _r.expire(key, 32 * 24 * 3600)  # 32 days TTL
+        return True
+
+except ImportError:
+    def check_budget(user_id: str, estimated_cost: float) -> bool:  # type: ignore
+        """Fallback nếu redis package chưa được cài."""
+        return True

@@ -27,7 +27,9 @@ from contextlib import asynccontextmanager
 
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import uvicorn
+import asyncio
 from utils.mock_llm import ask
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -60,7 +62,7 @@ async def lifespan(app: FastAPI):
     elapsed = 0
     while _in_flight_requests > 0 and elapsed < timeout:
         logger.info(f"Waiting for {_in_flight_requests} in-flight requests...")
-        time.sleep(1)
+        await asyncio.sleep(1)
         elapsed += 1
 
     logger.info("✅ Shutdown complete")
@@ -90,11 +92,19 @@ def root():
     return {"message": "AI Agent with health checks!"}
 
 
+class AskRequest(BaseModel):
+    question: str
+
+
 @app.post("/ask")
-async def ask_agent(question: str):
+async def ask_agent(body: AskRequest):
     if not _is_ready:
         raise HTTPException(503, "Agent not ready")
-    return {"answer": ask(question)}
+    
+    # Giả lập xử lý lâu (3 giây) để test shutdown
+    await asyncio.sleep(3)
+    
+    return {"question": body.question, "answer": ask(body.question)}
 
 
 # ──────────────────────────────────────────────────────────

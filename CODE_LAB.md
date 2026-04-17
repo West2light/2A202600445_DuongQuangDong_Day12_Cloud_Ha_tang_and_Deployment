@@ -188,10 +188,10 @@ docker run -p 8000:8000 my-agent:develop
 curl http://localhost:8000/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "What is Docker?"}'
-```
 
-C:\Users\Duong Dong>curl "http://localhost:8000/ask?question=What%20is%20Docker?" -X POST
+C:\Users\DuongDong>curl "http://localhost:8000/ask?question=What%20is%20Docker?" -X POST
 {"answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!"}
+```
 
 **Quan sát:** Image size là bao nhiêu?
 
@@ -199,8 +199,9 @@ C:\Users\Duong Dong>curl "http://localhost:8000/ask?question=What%20is%20Docker?
 docker images my-agent:develop
 ```
 
-IMAGE ID DISK USAGE CONTENT SIZE EXTRA
-my-agent:develop 55abb312e91d 1.66GB 424MB U
+| IMAGE            | ID           | DISK USAGE | CONTENT SIZE | EXTRA |
+| :--------------- | :----------- | :--------- | :----------- | :---- |
+| my-agent:develop | 55abb312e91d | 1.66GB     | 424MB        | U     |
 
 ### Exercise 2.3: Multi-stage build
 
@@ -234,7 +235,6 @@ cd ../production
   Stage 2: Runtime
   Stage 2 = runtime environment (production)
   Chỉ copy những gì cần để CHẠY, không cần để BUILD
-  Stage 2 = runtime environment (production)
   Cụ thể:
   FROM python:3.11-slim AS runtime
   Một image mới, sạch hoàn toàn (không có gcc, build tools)
@@ -277,8 +277,10 @@ docker build -t my-agent:advanced .
 docker images | grep my-agent
 ```
 
-my-agent:advanced 7e1f9e14e8d2 236MB 56.6MB
-my-agent:develop 55abb312e91d 1.66GB 424MB U
+| IMAGE             | ID           | DISK USAGE | CONTENT SIZE | EXTRA |
+| :---------------- | :----------- | :--------- | :----------- | :---- |
+| my-agent:advanced | 7e1f9e14e8d2 | 236MB      | 56.6MB       |       |
+| my-agent:develop  | 55abb312e91d | 1.66GB     | 424MB        | U     |
 
 ### Exercise 2.4: Docker Compose stack
 
@@ -299,6 +301,7 @@ graph TD
 docker compose up
 ```
 
+```bash
 (venv) PS D:\VinAI\Ex12\day12_ha-tang-cloud_va_deployment\02-docker\production> docker compose down; docker compose up -d
 [+] Running 5/5
 ✔ Container production-nginx-1 Removed 0.1s
@@ -312,19 +315,20 @@ docker compose up
 ✔ Container production-qdrant-1 Healthy 16.5s
 ✔ Container production-agent-1 Started 16.5s
 ✔ Container production-nginx-1 Started 16.6s
+```
 
 Services nào được start? Chúng communicate thế nào?
 
-Services chạy:
-agent
-redis
-qdrant
-nginx
-Communication:
-Qua Docker network internal
-Gọi nhau bằng service name (DNS nội bộ)
-Entry point:
-nginx (localhost:80)
+- **Services chạy:**
+  agent
+  redis
+  qdrant
+  nginx
+- **Communication:**
+  Qua Docker network internal
+  Gọi nhau bằng service name (DNS nội bộ)
+  Entry point:
+  nginx (localhost:80)
 
 Test:
 
@@ -339,10 +343,10 @@ C:\Users\Duong Dong>curl http://localhost/health
 curl http://localhost/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "Explain microservices"}'
-```
 
 C:\Users\Duong Dong>curl -X POST http://localhost/ask -H "Content-Type: application/json" -d "{\"question\":\"Explain microservices\"}"
 {"answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé."}
+```
 
 ### Checkpoint 2
 
@@ -415,6 +419,7 @@ railway domain
 ```
 
 **Nhiệm vụ:** Test public URL với curl hoặc Postman.
+https://agent-production-64db.up.railway.app
 
 Test:
 
@@ -422,10 +427,16 @@ Test:
 # Health check
 curl http://student-agent-domain/health
 
+C:\Users\DuongDong>curl https://agent-production-64db.up.railway.app/health
+{"status":"ok","uptime_seconds":173.8,"platform":"Railway","timestamp":"2026-04-17T10:19:41.081192+00:00"}
+
 # Agent endpoint
 curl http://studen-agent-domain/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": ""}'
+
+C:\Users\DuongDong>curl -X POST https://agent-production-64db.up.railway.app/ask -H "Content-Type: application/json" -d "{\"question\":\"Explain microservices\"}"
+{"question":"Explain microservices","answer":"Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.","platform":"Railway"}
 ```
 
 ### Exercise 3.2: Deploy Render (15 phút)
@@ -446,6 +457,20 @@ cd ../render
 
 **Nhiệm vụ:** So sánh `render.yaml` với `railway.toml`. Khác nhau gì?
 
+**Trả lời:**
+
+1. **Phạm vi (Scope) & Định dạng:**
+   - `render.yaml` (Blueprint IaC): Dùng cú pháp YAML, có khả năng định nghĩa **toàn bộ hạ tầng** bao gồm nhiều services hoạt động cùng nhau (ví dụ: Web Service `ai-agent` chạy cùng với một Data Service như Redis `agent-cache`). File này cũng chứa thông tin chi tiết về hạ tầng như `region` (khu vực deploy) và `plan` (gói cước).
+   - `railway.toml`: Dùng cú pháp TOML, thường chỉ định cấu hình riêng biệt cho việc **build và deploy của một service đơn lẻ** mà mã nguồn hiện tại đang đứng.
+
+2. **Cách thức Build & Định hình Môi trường:**
+   - Trong `render.yaml` cần khai báo rõ ràng `buildCommand` cụ thể (ví dụ: `pip install -r requirements.txt`) và `runtime: python` để hệ thống biết cách build.
+   - `railway.toml` trong ví dụ sử dụng `builder = "NIXPACKS"`, một công cụ của Railway có khả năng tự động phân tích code (auto-detect Python & requirements) và build môi trường một cách ma thuật mà không cần lệnh build chi tiết.
+
+3. **Quản lý Biến môi trường (Environment Variables):**
+   - Định dạng của `render.yaml` cho phép định nghĩa trực tiếp cấu trúc biến môi trường bên trong mã nguồn hạ tầng. Nó cho phép phân loại cụ thể các biến thông thường (`ENVIRONMENT=production`), biến không muốn đồng bộ lên Git (`sync: false`), và tự động sinh key ẩn danh (`generateValue: true`).
+   - `railway.toml` thì không lưu trực tiếp giá trị của Environment Variables. Việc quản trị biến môi trường trong Railway hoàn toàn dựa vào Dashboard UI, hoặc sử dụng câu lệnh từ CLI (`railway variables set`).
+
 ### Exercise 3.3: (Optional) GCP Cloud Run (15 phút)
 
 ```bash
@@ -458,10 +483,10 @@ cd ../production-cloud-run
 
 ### Checkpoint 3
 
-- [ ] Deploy thành công lên ít nhất 1 platform
-- [ ] Có public URL hoạt động
-- [ ] Hiểu cách set environment variables trên cloud
-- [ ] Biết cách xem logs
+- [x] Deploy thành công lên ít nhất 1 platform
+- [x] Có public URL hoạt động
+- [x] Hiểu cách set environment variables trên cloud
+- [x] Biết cách xem logs
 
 ---
 
@@ -486,8 +511,13 @@ cd ../../04-api-gateway/develop
 **Nhiệm vụ:** Đọc `app.py` và tìm:
 
 - API key được check ở đâu?
+  **Trả lời:** Khóa được kiểm tra tại hàm dependency tên là `verify_api_key`, hàm này lấy giá trị từ header `X-API-Key`. Đồng thời, route `/ask` có khai báo `_key: str = Depends(verify_api_key)` để tự động chạy hàm kiểm tra này trước khi xử lý request.
 - Điều gì xảy ra nếu sai key?
+  **Trả lời:** Dựa trên định nghĩa lỗi:
+  - Nếu thiếu key (không gửi header), server ném lỗi `HTTPException` với status code `401 Unauthorized`.
+  - Nếu gửi sai key (không khớp với biến môi trường), server ném lỗi status code `403 Forbidden`.
 - Làm sao rotate key?
+  **Trả lời:** Hệ thống tham chiếu giá trị từ biến môi trường thông qua lệnh `os.getenv("AGENT_API_KEY")`. Do đó, để đổi khóa (rotate key), bạn chỉ cần thay đổi giá trị của biến môi trường `AGENT_API_KEY` ở host/server/dashboard và restart lại hệ thống, không cần sửa đổi thông tin trong code.
 
 Test:
 
@@ -499,11 +529,17 @@ curl http://localhost:8000/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "Hello"}'
 
+C:\Users\DuongDong>curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d "{\"question\": \"Hello\"}"
+{"detail":"Missing API key. Include header: X-API-Key: <your-key>"}
+
 #  Có key
 curl http://localhost:8000/ask -X POST \
   -H "X-API-Key: secret-key-123" \
   -H "Content-Type: application/json" \
   -d '{"question": "Hello"}'
+
+C:\Users\DuongDong>curl http://localhost:8000/ask -X POST -H "X-API-Key: demo-key-change-in-production" -H "Content-Type: application/json" -d "{\"question\": \"Hello\"}"
+{"question":"Hello","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic."}
 ```
 
 ### Exercise 4.2: JWT authentication (Advanced)
@@ -525,6 +561,12 @@ curl http://localhost:8000/token -X POST \
   -d '{"username": "admin", "password": "secret"}'
 ```
 
+```bash
+DuongDong@DESKTOP-KA0RASH MINGW64 /d/VinAI/Ex12/day12_ha-tang-cloud_va_deployment (main)
+$ curl http://localhost:8000/auth/token -X POST -H "Content-Type: application/json" -d "{\"username\": \"student\", \"password\":  \"demo123\"}"
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHVkZW50Iiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzY0Mjc0MDQsImV4cCI6MTc33NjQzMTAwNH0.QAVrnQgHn64elel5nLY7RBv6MQEUJ5R5i1NTLHXKMeI","token_type":"bearer","expires_in_minutes":60,"hint":"Include in header : Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."}
+```
+
 3. Dùng token để gọi API:
 
 ```bash
@@ -535,13 +577,73 @@ curl http://localhost:8000/ask -X POST \
   -d '{"question": "Explain JWT"}'
 ```
 
+```bash
+# 1. Lấy token và lưu vào biến (Lưu ý: dùng dấu ngoặc đơn cho JSON)
+export TOKEN=$(curl -s http://localhost:8000/auth/token -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username": "student", "password": "demo123"}' | sed -E 's/.*"access_token":"([^"]+)".*/\1/')
+
+# 2. Kiểm tra xem biến đã có token chưa
+echo $TOKEN
+
+# 3. Chạy lệnh ask
+curl http://localhost:8000/ask -X POST \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Explain JWT"}'
+```
+
+```bash
+DuongDong@DESKTOP-KA0RASH MINGW64 /d/VinAI/Ex12/day12_ha-tang-cloud_va_deployment (main)
+$ curl http://localhost:8000/ask -X POST \
+>   -H "Authorization: Bearer $TOKEN" \
+>   -H "Content-Type: application/json" \
+>   -d '{"question": "Explain JWT"}'
+{"question":"Explain JWT","answer":"Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.","usage":{"requests_remaining":9,"budget_remaining_usd":1.9e-05}}
+```
+
+```bash
+INFO:     127.0.0.1:57839 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=3 cost=$0.0001/1.0
+INFO:     127.0.0.1:57841 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=4 cost=$0.0001/1.0
+INFO:     127.0.0.1:57843 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=5 cost=$0.0001/1.0
+INFO:     127.0.0.1:57845 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=6 cost=$0.0001/1.0
+INFO:     127.0.0.1:57847 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=7 cost=$0.0001/1.0
+INFO:     127.0.0.1:57861 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=8 cost=$0.0001/1.0
+INFO:     127.0.0.1:57863 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=9 cost=$0.0002/1.0
+INFO:     127.0.0.1:57868 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=10 cost=$0.0002/1.0
+INFO:     127.0.0.1:57870 - "POST /ask HTTP/1.1" 200 OK
+INFO:cost_guard:Usage: user=student req=11 cost=$0.0002/1.0
+INFO:     127.0.0.1:57872 - "POST /ask HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57882 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57884 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57886 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57888 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57895 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57897 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57899 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57901 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57912 - "POST /ask HTTP/1.1" 429 Too Many Requests
+INFO:     127.0.0.1:57914 - "POST /ask HTTP/1.1" 429 Too Many Requests
+```
+
 ### Exercise 4.3: Rate limiting
 
 **Nhiệm vụ:** Đọc `rate_limiter.py` và trả lời:
 
 - Algorithm nào được dùng? (Token bucket? Sliding window?)
+  **Trả lời:** Thuật toán **Sliding Window Log** (sử dụng `deque` để lưu timestamps và loại bỏ các bản ghi cũ ngoài window 60s).
 - Limit là bao nhiêu requests/minute?
+  **Trả lời:** Hạn mức khác nhau tùy theo role: 10 req/phút cho **User** và 100 req/phút cho **Admin**.
 - Làm sao bypass limit cho admin?
+  **Trả lời:** Thay vì dùng instance `rate_limiter_user`, hệ thống kiểm tra role trong JWT và chuyển sang dùng instance `rate_limiter_admin` với cấu hình hạn mức cao hơn (100 req/phút).
 
 Test:
 
@@ -557,6 +659,37 @@ done
 ```
 
 Quan sát response khi hit limit.
+
+```bash
+DuongDong@DESKTOP-KA0RASH MINGW64 /d/VinAI/Ex12/day12_ha-tang-cloud_va_deployment (main)
+$ for i in {1..20}; do
+>   curl http://localhost:8000/ask -X POST \
+>     -H "Authorization: Bearer $TOKEN" \
+>     -H "Content-Type: application/json" \
+>     -d '{"question": "Test '$i'"}'
+>   echo ""
+> done
+{"question":"Test 1","answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.","usage":{"requests_remaining":9,"budget_remaining_usd":3.5e-05}}
+{"question":"Test 2","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.","usage":{"requests_remaining":8,"budget_remaining_usd":5.6e-05}}
+{"question":"Test 3","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.","usage":{"requests_remaining":7,"budget_remaining_usd":7.7e-05}}
+{"question":"Test 4","answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.","usage":{"requests_remaining":6,"budget_remaining_usd":9.3e-05}}
+{"question":"Test 5","answer":"Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.","usage":{"requests_remaining":5,"budget_remaining_usd":0.000112}}
+{"question":"Test 6","answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.","usage":{"requests_remaining":4,"budget_remaining_usd":0.000128}}
+{"question":"Test 7","answer":"Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.","usage":{"requests_remaining":3,"budget_remaining_usd":0.000146}}
+{"question":"Test 8","answer":"Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.","usage":{"requests_remaining":2,"budget_remaining_usd":0.000165}}
+{"question":"Test 9","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.","usage":{"requests_remaining":1,"budget_remaining_usd":0.000186}}
+{"question":"Test 10","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.","usage":{"requests_remaining":0,"budget_remaining_usd":0.000207}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":57}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":56}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":56}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":56}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":56}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":55}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":55}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":55}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":55}}
+{"detail":{"error":"Rate limit exceeded","limit":10,"window_seconds":60,"retry_after_seconds":54}}
+```
 
 ### Exercise 4.4: Cost guard
 
@@ -575,6 +708,14 @@ def check_budget(user_id: str, estimated_cost: float) -> bool:
     # TODO: Implement
     pass
 ```
+
+**Phân tích `cost_guard.py`:**
+
+- **Budget mỗi user:** $1/ngày (per-user daily budget) và $10/ngày cho toàn hệ thống (global budget).
+- **Cách tính chi phí:** Dựa trên số tokens, gồm input ($0.15/1M tokens) và output ($0.60/1M tokens), tính theo giá GPT-4o-mini.
+- **Cơ chế reset:** Dùng `time.strftime("%Y-%m-%d")` để kiểm tra ngày hiện tại. Nếu sang ngày mới, `UsageRecord` của user được tạo lại từ đầu → budget tự động reset mỗi ngày.
+- **Cảnh báo:** Khi user dùng ≥ 80% budget, hệ thống ghi `WARNING` vào log.
+- **Block:** Vượt per-user budget → `402 Payment Required`. Vượt global budget → `503 Service Unavailable`.
 
 <details>
 <summary> Solution</summary>
@@ -602,10 +743,10 @@ def check_budget(user_id: str, estimated_cost: float) -> bool:
 
 ### Checkpoint 4
 
-- [ ] Implement API key authentication
-- [ ] Hiểu JWT flow
-- [ ] Implement rate limiting
-- [ ] Implement cost guard với Redis
+- [x] Implement API key authentication
+- [x] Hiểu JWT flow
+- [x] Implement rate limiting
+- [x] Implement cost guard với Redis
 
 ---
 
@@ -645,8 +786,35 @@ def ready():
     pass
 ```
 
+**Trả lời:**
+
+- **`/health` (Liveness probe):** Kiểm tra xem process có còn sống không. Trả về `200 OK` với uptime và version. Nếu endpoint này không response → platform restart container.
+- **`/ready` (Readiness probe):** Kiểm tra xem agent có sẵn sàng nhận traffic không. Trả về `503` khi đang khởi động (`_is_ready = False`) hoặc đang shutdown. Load balancer dùng endpoint này để quyết định có route request vào instance hay không.
+- **Sự khác biệt quan trọng:** `/health` = "còn sống không?", `/ready` = "sẵn sàng phục vụ chưa?". Một container có thể còn sống (health OK) nhưng chưa ready (model đang load).
+
+```python
+@app.get("/health")
+def health():
+    uptime = round(time.time() - START_TIME, 1)
+    return {
+        "status": "ok",
+        "uptime_seconds": uptime,
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+@app.get("/ready")
+def ready():
+    if not _is_ready:
+        raise HTTPException(
+            status_code=503,
+            detail="Agent not ready. Check back in a few seconds.",
+        )
+    return {"ready": True, "in_flight_requests": _in_flight_requests}
+```
+
 <details>
-<summary> Solution</summary>
+<summary> Solution gốc</summary>
 
 ```python
 @app.get("/health")
@@ -690,11 +858,39 @@ def shutdown_handler(signum, frame):
 signal.signal(signal.SIGTERM, shutdown_handler)
 ```
 
+**Trả lời:** Trong file `05-scaling-reliability/develop/app.py`, graceful shutdown được implement theo pattern hiện đại hơn bằng `lifespan` context manager của FastAPI thay vì signal handler thủ công:
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _is_ready
+    # --- Startup ---
+    _is_ready = True
+    yield
+    # --- Shutdown (chạy khi nhận SIGTERM) ---
+    _is_ready = False  # 1. Ngừng nhận request mới (ready probe trả 503)
+    timeout = 30
+    elapsed = 0
+    while _in_flight_requests > 0 and elapsed < timeout:  # 2. Chờ request đang xử lý
+        time.sleep(1)
+        elapsed += 1
+    # 3. Connections đóng tự động khi app thoát
+    logger.info("Shutdown complete")
+
+def handle_sigterm(signum, frame):
+    """uvicorn tự bắt SIGTERM và gọi lifespan shutdown."""
+    logger.info(f"Received signal {signum}")
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+```
+
 Test:
 
 ```bash
 python app.py &
 PID=$!
+
+py app.py ; PID=$!
 
 # Gửi request
 curl http://localhost:8000/ask -X POST \
@@ -739,6 +935,12 @@ def ask(user_id: str, question: str):
 
 Tại sao? Vì khi scale ra nhiều instances, mỗi instance có memory riêng.
 
+**Trả lời:** Khi có 3 instances (Agent1, Agent2, Agent3) chạy sau Nginx load balancer:
+
+- Request 1 (hỏi câu A) → Agent1, lưu vào `conversation_history` của Agent1.
+- Request 2 (hỏi tiếp câu B) → Nginx route sang Agent2 → Agent2 **không có** lịch sử → trả lời sai.
+- Dùng Redis: Cả 3 agents đều đọc/ghi vào cùng một Redis → lịch sử được chia sẻ → đúng.
+
 ### Exercise 5.4: Load balancing
 
 **Nhiệm vụ:** Chạy stack với Nginx load balancer:
@@ -752,6 +954,8 @@ Quan sát:
 - 3 agent instances được start
 - Nginx phân tán requests
 - Nếu 1 instance die, traffic chuyển sang instances khác
+
+**Trả lời:** Nginx sử dụng thuật toán **Round-Robin** mặc định để phân phối request tuần tự qua các instances. Khi 1 instance die, Nginx phát hiện qua health check (`/health` hoặc kết nối TCP thất bại) và tự động loại instance đó khỏi pool, chuyển traffic sang các instances còn lại.
 
 Test:
 
@@ -779,13 +983,15 @@ Script này:
 2. Kill random instance
 3. Gọi tiếp — conversation vẫn còn không?
 
+**Trả lời:** Nếu app được thiết kế stateless (lưu state trong Redis), conversation **vẫn còn** sau khi instance bị kill vì dữ liệu được lưu ở Redis dùng chung — không phụ thuộc vào instance cụ thể nào.
+
 ### Checkpoint 5
 
-- [ ] Implement health và readiness checks
-- [ ] Implement graceful shutdown
-- [ ] Refactor code thành stateless
-- [ ] Hiểu load balancing với Nginx
-- [ ] Test stateless design
+- [x] Implement health và readiness checks
+- [x] Implement graceful shutdown
+- [x] Refactor code thành stateless
+- [x] Hiểu load balancing với Nginx
+- [x] Test stateless design
 
 ---
 
@@ -799,24 +1005,24 @@ Build một production-ready AI agent từ đầu, kết hợp TẤT CẢ concep
 
 **Functional:**
 
-- [ ] Agent trả lời câu hỏi qua REST API
-- [ ] Support conversation history
-- [ ] Streaming responses (optional)
+- [x] Agent trả lời câu hỏi qua REST API
+- [x] Support conversation history
+- [x] Streaming responses (optional)
 
 **Non-functional:**
 
-- [ ] Dockerized với multi-stage build
-- [ ] Config từ environment variables
-- [ ] API key authentication
-- [ ] Rate limiting (10 req/min per user)
-- [ ] Cost guard ($10/month per user)
-- [ ] Health check endpoint
-- [ ] Readiness check endpoint
-- [ ] Graceful shutdown
-- [ ] Stateless design (state trong Redis)
-- [ ] Structured JSON logging
-- [ ] Deploy lên Railway hoặc Render
-- [ ] Public URL hoạt động
+- [x] Dockerized với multi-stage build
+- [x] Config từ environment variables
+- [x] API key authentication
+- [x] Rate limiting (10 req/min per user)
+- [x] Cost guard ($10/month per user)
+- [x] Health check endpoint
+- [x] Readiness check endpoint
+- [x] Graceful shutdown
+- [x] Stateless design (state trong Redis)
+- [x] Structured JSON logging
+- [x] Deploy lên Railway hoặc Render
+- [x] Public URL hoạt động
 
 ### 🏗 Architecture
 
