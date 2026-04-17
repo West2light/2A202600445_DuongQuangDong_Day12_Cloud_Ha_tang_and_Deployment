@@ -1252,6 +1252,79 @@ Script sẽ kiểm tra:
 
 ---
 
+```bash
+(venv) PS D:\VinAI\Ex12\day12_ha-tang-cloud_va_deployment\06-lab-complete> railway up
+> Select a service Ai-Agent-Complete
+  Indexed
+  Compressed [====================] 100%
+  Uploaded                                                                                                                                                                                                                                                                                           Build Logs: https://railway.com/project/8d00036d-6053-4196-b258-fc21df8c3888/service/b04d0f40-ba46-42e3-892a-4a69d7785c80?id=e9eba288-e5f4-477a-b3c5-744a03b6762e&
+
+[Region: us-west1]
+=========================
+Using Detected Dockerfile
+=========================
+
+context: nlbz-7AgO
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[internal] load build definition from Dockerfile
+[auth] library/python:pull token for registry-1.docker.io
+[auth] library/python:pull token for registry-1.docker.io
+[internal] load metadata for docker.io/library/python:3.11-slim
+[internal] load .dockerignore
+[internal] load .dockerignore
+[internal] load .dockerignore
+[runtime 7/7] RUN chown -R agent:agent /app
+[runtime 6/7] COPY utils/ ./utils/
+[runtime 5/7] COPY app/ ./app/
+[runtime 4/7] COPY --from=builder /install /usr/local
+[builder 5/5] RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+[builder 4/5] COPY requirements.txt .
+[internal] load build context
+[builder 3/5] RUN apt-get update && apt-get install -y gcc libpq-dev     && rm -rf /var/lib/apt/lists/*
+[builder 2/5] WORKDIR /build
+[runtime 2/7] RUN groupadd -r agent && useradd -r -g agent -d /app -s /sbin/nologin agent
+[builder 1/5] FROM docker.io/library/python:3.11-slim@sha256:233de06753d30d120b1a3ce359d8d3be8bda78524cd8f520c99883bfe33964cf
+[internal] load build context
+[builder 1/5] FROM docker.io/library/python:3.11-slim@sha256:233de06753d30d120b1a3ce359d8d3be8bda78524cd8f520c99883bfe33964cf
+[builder 1/5] FROM docker.io/library/python:3.11-slim@sha256:233de06753d30d120b1a3ce359d8d3be8bda78524cd8f520c99883bfe33964cf
+[internal] load build context
+[internal] load build context
+[runtime 2/7] RUN groupadd -r agent && useradd -r -g agent -d /app -s /sbin/nologin agent
+[builder 2/5] WORKDIR /build
+[builder 3/5] RUN apt-get update && apt-get install -y gcc libpq-dev     && rm -rf /var/lib/apt/lists/*
+[builder 4/5] COPY requirements.txt .
+[builder 5/5] RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+[runtime 5/7] COPY app/ ./app/
+[runtime 6/7] COPY utils/ ./utils/
+[auth] sharing credentials for production-us-west2.railway-registry.com
+[auth] sharing credentials for production-us-west2.railway-registry.com
+importing to docker
+importing to docker
+Build time: 8.74 seconds
+Starting Container
+INFO:     Started server process [5]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Deploy complete
+
+====================
+Starting Healthcheck
+====================
+
+{"ts":"2026-04-17 14:49:50,215","lvl":"INFO","msg":"{"event": "request", "method": "GET", "path": "/health", "status": 200, "ms": 1.0}"}
+INFO:     100.64.0.2:55653 - "GET /health HTTP/1.1" 200 OK
+Path: /health
+Retry window: 30s
+
+[1/1] Healthcheck succeeded!
+{"ts":"2026-04-17 14:50:58,202","lvl":"INFO","msg":"{"event": "request", "method": "GET", "path": "/", "status": 200, "ms": 0.5}"}
+INFO:     100.64.0.3:15408 - "GET / HTTP/1.1" 200 OK
+```
+
+## URL: https://ai-agent-complete-production.up.railway.app/
+
 ## Hoàn Thành!
 
 Bạn đã:
